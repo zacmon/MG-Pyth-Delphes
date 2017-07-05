@@ -26,28 +26,35 @@ R__LOAD_LIBRARY(libDelphes)
 #include <TChain.h>
 #include <TString.h>
 
-TH1D* muonPt = new TH1D("muonPt", "Muon P_{T}; P_{T}; Frequency", 50, -10, 500);
-TH1D* muonEta = new TH1D("muonEta", "Muon #eta; #eta; Frequency", 50, -2.5, 2.5);
+//  Delcare histograms.
+TH1D* muonPtHist = new TH1D("muonPt", "Muon P_{T}; P_{T}; Frequency", 50, -10, 500);
+TH1D* muonEtaHist = new TH1D("muonEta", "Muon #eta; #eta; Frequency", 50, -2.5, 2.5);
 
-TH1D* electronPt = new TH1D("electronPt", "Electron P_{T}; P_{T}; Frequency", 50, 0, 400);
-TH1D* electronEta = new TH1D("electronEta", "Electron #eta; #eta; Frequency", 50, -2.5, 2.5);
+TH1D* electronPtHist = new TH1D("electronPt", "Electron P_{T}; P_{T}; Frequency", 50, 0, 400);
+TH1D* electronEtaHist = new TH1D("electronEta", "Electron #eta; #eta; Frequency", 50, -2.5, 2.5);
 
-TH1D* jetPt = new TH1D("jetMass", "Jet P_{T}; Jet P_{T}; Frequency", 50, -1, 450);
-TH1D* jetEta = new TH1D("jetEta", "Jet Eta; Jet #eta; Frequency", 50, -5, 5);
+TH1D* jetPtHist = new TH1D("jetMass", "Jet P_{T}; Jet P_{T}; Frequency", 50, -1, 450);
+TH1D* jetEtaHist = new TH1D("jetEta", "Jet Eta; Jet #eta; Frequency", 50, -5, 5);
 
-TH1D* metMET = new TH1D("metMET", "Missing E_{T}; Missing E_{T}; Frequency", 50, -10, 300);
-TH1D* metEta = new TH1D("metEta", "Missing E_{T} #eta; #eta; Frequency", 50, -8, 8);
+TH1D* metMETHist = new TH1D("metMET", "Missing E_{T}; Missing E_{T}; Frequency", 50, -10, 300);
+TH1D* metEtaHist = new TH1D("metEta", "Missing E_{T} #eta; #eta; Frequency", 50, -8, 8);
 
-TH1D* daughterType = new TH1D("daughterType", "Distribution of Daughter Particles; PID; Frequency", 80, -20, 20);
-TH1D* hadronPt = new TH1D("hadronPt", "Daughter Hadron P_{T}; P_{T}; Frequency", 50, -10, 300);
-TH1D* hadronEta = new TH1D("hadronEta", "Daughter Hadron #eta; #eta; Frequency", 50, -5, 5);
-TH1D* leptonPt = new TH1D("leptonPt", "Daughter Lepton P_{T}; P_{T}; Frequency", 50, -5, 300);
-TH1D* leptonEta = new TH1D("leptonEta", "Daughter Lepton #eta; #eta; Frequency", 50, -5, 5);
+TH1D* daughterPIDHist = new TH1D("daughterPID", "Distribution of Daughter Particles; PID; Frequency", 80, -20, 20);
+TH1D* hadronPtHist = new TH1D("hadronPt", "Daughter Hadron P_{T}; P_{T}; Frequency", 50, -10, 300);
+TH1D* hadronEtaHist = new TH1D("hadronEta", "Daughter Hadron #eta; #eta; Frequency", 50, -5, 5);
+TH1D* leptonPtHist = new TH1D("leptonPt", "Daughter Lepton P_{T}; P_{T}; Frequency", 50, -5, 300);
+TH1D* leptonEtaHist = new TH1D("leptonEta", "Daughter Lepton #eta; #eta; Frequency", 50, -5, 5);
 
-//  Prints particle information in a table.
-void printParticle(GenParticle* particle, Int_t i) {
+//  Declare histogram array.
+TH1D* histogramArray[] = {muonPtHist, muonEtaHist, electronPtHist, jetPtHist, jetEtaHist, metMETHist, metEtaHist,
+			  daughterPIDHist, hadronPtHist, hadronEtaHist, leptonPtHist, leptonEtaHist};
+
+//  Delcare save directory.
+TString saveDirectory = "~/Work/MG-Pyth-Delphes/";
+
+void printParticleInfo(GenParticle* particle, Int_t index) {
   printf("\n %3d %6d %4d %4d %4d %5d %6d %6d %3d",
-	 i, particle -> PID, particle -> Status, particle -> IsPU, particle -> M1, particle -> M2,
+	 index, particle -> PID, particle -> Status, particle -> IsPU, particle -> M1, particle -> M2,
 	 particle -> D1, particle -> D2, particle -> Charge);
   printf("%9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %9.2f %7.2f %7.2f %7.2f %7.2f %7.2f",
 	 particle -> Mass,
@@ -58,47 +65,81 @@ void printParticle(GenParticle* particle, Int_t i) {
 	 particle -> T, particle -> X, particle -> Y, particle -> Z);
 }
 
-//  Fills muons histograms.
-void muonHist(TClonesArray* branchMuon) {
+void fillMuonHistograms(TClonesArray* branchMuon) {
   if (branchMuon -> GetEntries() > 0) {
     for (Int_t i = 0; i < branchMuon -> GetEntries(); ++i) {
       Muon* muon = (Muon*) branchMuon -> At(i);
-      muonPt -> Fill(muon -> PT);
-      muonEta -> Fill(muon -> Eta);
+      muonPtHist -> Fill(muon -> PT);
+      muonEtaHist -> Fill(muon -> Eta);
     }
   }
 }
 
-//  Fills electron histograms.
-void electronHist(TClonesArray* branchElectron) {
+void fillElectronHistograms(TClonesArray* branchElectron) {
   if (branchElectron -> GetEntries() > 0) {
     for (Int_t i = 0; i < branchElectron -> GetEntries(); ++i) {
       Electron* electron = (Electron*) branchElectron -> At(i);
-      electronPt -> Fill(electron -> PT);
-      electronEta -> Fill(electron -> Eta);
+      electronPtHist -> Fill(electron -> PT);
+      electronEtaHist -> Fill(electron -> Eta);
     }
   }
 }
 
-//  Fills jet histograms.
-void jetHist(TClonesArray* branchJet) {
+void fillJetHistograms(TClonesArray* branchJet) {
   if (branchJet -> GetEntries() > 0) {
     for (Int_t i = 0; i < branchJet -> GetEntries(); ++i) {
       Jet* jet = (Jet*) branchJet -> At(i);
-      jetPt -> Fill(jet -> PT);
-      jetEta -> Fill(jet -> Eta);
+      jetPtHist -> Fill(jet -> PT);
+      jetEtaHist -> Fill(jet -> Eta);
     }
   }
 }
 
-//  Fills MET histograms.
-void metHist(TClonesArray* branchMET) {
+void fillMETHistograms(TClonesArray* branchMET) {
   if (branchMET -> GetEntries() > 0) {
     for (Int_t i = 0; i < branchMET -> GetEntries(); ++i) {
       MissingET* met = (MissingET*) branchMET -> At(i);
-      metMET -> Fill(met -> MET);
-      metEta -> Fill(met -> Eta);
+      metMETHist -> Fill(met -> MET);
+      metEtaHist -> Fill(met -> Eta);
     }
+  }
+}
+
+bool hasMother(GenParticle* particle) {
+  return particle -> M1 != -1;
+}  
+
+bool isPhoton(GenParticle* particle) {
+  return particle -> PID == 22;
+}
+
+bool isWBoson(GenParticle* particle) {
+  return abs(particle -> PID) == 24;
+}
+
+bool hasDaughters(TClonesArray* branchParticle, GenParticle* particle) {
+  GenParticle* daughter1 = (GenParticle*) branchParticle -> At(particle -> D1);
+  return abs(daughter1 -> PID) != 24;
+}
+
+int getDaughterPID(TClonesArray* branchParticle, int index) {
+  GenParticle* daughter = (GenParticle*) branchParticle -> At(index);
+  return daughter -> PID;
+}
+
+bool isQuark(int PID) {
+  return abs(PID) < 6;
+}
+
+bool isLepton(int PID) {
+  return abs(PID) > 10 && abs(PID) < 17;
+}
+
+void saveHistograms() {
+  TCanvas* c = new TCanvas("c", "c");
+  for (auto histogram : histogramArray) {
+    histogram -> Draw();
+    c -> SaveAs(saveDirectory + histogram -> GetName() + ".png");
   }
 }
 
@@ -150,10 +191,10 @@ void BranchingRatio(const char *inputFile) {
   TClonesArray* branchJet = treeReader -> UseBranch("Jet");
   TClonesArray* branchMET = treeReader -> UseBranch("MissingET");
 
-  //  Bool to enable printing for particles.
-  bool print(0);
+  //  Bool to enable printing of particle info.
+  bool printParticle(0);
   
-  if (print) {
+  if (printParticle) {
     printf("\n \n %6s %3s %4s %1s %3s %4s %6s %6s %6s",
 	   "Index", "PID", "Status", "IsPU", "M1", "M2", "D1", "D2", "Charge");
     printf("%6s %7s %9s %10s %8s %10s %9s %8s %10s %9s %12s %6s %7s %6s %7s %7s %7s",
@@ -161,131 +202,79 @@ void BranchingRatio(const char *inputFile) {
 	   "D0", "DZ", "T", "X", "Y", "Z");
   std:cout << "\n--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
   }
-  
-  //  Vector to store PIDs of all W+- daughter particles of each event.
-  std::vector<std::vector<Int_t>> final_PID(numberOfEntries);
 
   //  Ints to track if decay is fully hardonic, semi-leptonic, or fully leptonic.
-  int full_hadron(0);
-  int semi_lept(0);
-  int full_lept(0);
+  int numFullyHadronic(0);
+  int numSemiLeptonic(0);
+  int numFullyLeptonic(0);
   
-  //  Loop over all events.
   for(Int_t entry = 0; entry < numberOfEntries; ++entry) {
-    //  Load selected branches with data from specified event.
-    treeReader->ReadEntry(entry);
+    treeReader -> ReadEntry(entry);
 
-    //  Fill muon pT and eta histograms.
-    muonHist(branchMuon);
+    fillMuonHistograms(branchMuon);
+    fillElectronHistograms(branchElectron);
+    fillJetHistograms(branchJet);
+    fillMETHistograms(branchMET);
 
-    //  Fill electron pT and eta histograms.
-    electronHist(branchElectron);
-
-    //  Fill jet pT and eta.
-    jetHist(branchJet);
-
-    //  Fill MET pT and eta.
-    metHist(branchMET);
-
-    //  Leptons are given a value of -1; hadrons are given a value of +1.
-    //  If fully hadronic, type_sum = 4; fully leptonic, type_sum = 4.
-    //  If semi-leptonic, -4 < type_sum < 4.
-    int type_sum(0);
-    
     //  Look in Particle branch.
     if (branchParticle -> GetEntries() > 0) {
+      //  Leptons are given a value of -1; hadrons are given a value of +1.
+      //  If fully hadronic, type_sum = 4; fully leptonic, type_sum = 4.
+      //  If semi-leptonic, -4 < type_sum < 4.
+      int decayTypeSum(0);
+
       for (Int_t i = 0; i < branchParticle -> GetEntries(); ++i) {
 	GenParticle *particle = (GenParticle*) branchParticle -> At(i);
        
-	if (print) {
-	  printParticle(particle, i);
+	if (printParticle) {
+	  printParticleInfo(particle, i);
 	}
-	
-	//  Use only particles with mothers.
-	if (particle -> M1 != -1) {
-	  GenParticle *mom = (GenParticle*) branchParticle -> At(particle -> M1);
-
-	  //  Get particles with W boson mom and that are not produced by final state showers.
-	  //  Neglecting the latter bool would yield a W boson as a daughter.
-	  if ((abs(mom -> PID) == 24 && particle -> Status < 50)) {
-	    final_PID[entry].push_back(particle -> PID);
-	    daughterType -> Fill(particle -> PID);
-
-	    //  Hadron daughters.
-	    if ((abs(particle -> PID)) < 9) {
-	      type_sum++;
-	      hadronPt -> Fill(particle -> PT);
-	      hadronEta -> Fill(particle -> Eta);
-	    }
-	    //  Lepton daughters.
-	    else if (abs(particle -> PID) > 9) {
-	      type_sum--;
-	      leptonPt -> Fill(particle -> PT);
-	      leptonEta -> Fill(particle -> Eta);
-	    }
+	//  Get W bosons that are not produced by final state showers.
+	//  Neglecting the latter bool would yield a W boson as a daughter.
+	if (isWBoson(particle) && hasDaughters(branchParticle, particle)) {
+	  GenParticle* daughterParticle1 = (GenParticle*) branchParticle -> At(particle -> D1);
+	  GenParticle* daughterParticle2 = (GenParticle*) branchParticle -> At(particle -> D2);
+	  daughterPIDHist -> Fill(daughterParticle1 -> PID);
+	  daughterPIDHist -> Fill(daughterParticle2 -> PID);
+	  
+	  if (isQuark(daughterParticle1 -> PID)) {
+	    decayTypeSum++;
+	    hadronPtHist -> Fill(particle -> PT);
+	    hadronEtaHist -> Fill(particle -> Eta);
+	  }
+	  
+	  else if (isLepton(daughterParticle1 -> PID)) {
+	    decayTypeSum = decayTypeSum + 3;
+	    leptonPtHist -> Fill(particle -> PT);
+	    leptonEtaHist -> Fill(particle -> Eta);
 	  }
 	}
-
+	
 	//  If all the daughter particles have been recovered,
 	//  then stop searching through this event to suppress bottlenecking.
-	if (final_PID[entry].size() == 4) {
+	if (decayTypeSum == 4) { 
+	  numFullyHadronic++;
+	  break;
+	}
+	else if (decayTypeSum == 12) {
+	  numFullyLeptonic++;
+	  break;
+	}
+	else if (decayTypeSum == 8) {
+	  numSemiLeptonic++;
 	  break;
 	}
       }
     }
-
-    //  Classify event.
-    if (type_sum == 4) {
-      full_hadron++;
-    }
-    else if (type_sum == -4) {
-      full_lept++;
-    }
-    else {
-      semi_lept++;
-    }
-
-    //  Reset type_sum for next event.
-    type_sum = 0;
   }
 
-  //  Save directory
-  TString directory = "~/Work/MG-Pyth-Delphes/";
-
   //  Save histograms.
-  TCanvas* c = new TCanvas("c");
-  muonPt -> Draw();
-  c -> SaveAs(directory + "muonPt.png");
-  muonEta -> Draw();
-  c -> SaveAs(directory + "muonEta.png");
-  electronPt -> Draw();
-  c -> SaveAs(directory + "electronPt.png");
-  electronEta -> Draw();
-  c -> SaveAs(directory + "electronEta.png");
-  jetPt -> Draw();
-  c -> SaveAs(directory + "jetPt.png");
-  jetEta -> Draw();
-  c -> SaveAs(directory + "jetEta.png");
-  metMET -> Draw();
-  c -> SaveAs(directory + "metMET.png");
-  metEta -> Draw();
-  c -> SaveAs(directory + "metEta.png");
-  daughterType -> Draw();
-  c -> SaveAs(directory + "DaughterType.png");
-  hadronPt -> Draw();
-  c -> SaveAs(directory + "hadronPt.png");
-  hadronEta -> Draw();
-  c -> SaveAs(directory + "hadronEta.png");
-  leptonPt -> Draw();
-  c -> SaveAs(directory + "leptonPt.png");
-  leptonEta -> Draw();
-  c -> SaveAs(directory + "leptonEta.png");
+  saveHistograms();
 
   //  Print fractions.
-  std::cout << numberOfEntries << std::endl;
-  std::cout << "Simulated fraction fully hadronic: " << full_hadron / (double)  numberOfEntries <<std::endl;
-  std::cout << "Simulated fraction fraction full leptonic: " << full_lept / (double) numberOfEntries << std::endl;
-  std::cout << "Simulated fraction semi-leptonic: " << semi_lept / (double) numberOfEntries << std::endl;
+  std::cout << "Simulated fraction fully hadronic: " << numFullyHadronic / (double)  numberOfEntries <<std::endl;
+  std::cout << "Simulated fraction fraction full leptonic: " << numFullyLeptonic / (double) numberOfEntries << std::endl;
+  std::cout << "Simulated fraction semi-leptonic: " << numSemiLeptonic / (double) numberOfEntries << std::endl;
 
   //  Experimental observations of W decay from PDG 2016.
   double decay_hadron_obs = 0.6741;
